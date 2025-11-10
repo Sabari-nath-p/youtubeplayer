@@ -1,12 +1,22 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>YouTube Controlled Player</title>
   <style>
-    html,body {margin:0;padding:0;width:100%;height:100%;background:black;overflow:hidden;}
-    #player {width:100%;height:100%;}
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background: black;
+      overflow: hidden;
+    }
+    #player {
+      width: 100vw;
+      height: 100vh;
+    }
   </style>
 </head>
 <body>
@@ -15,37 +25,41 @@
   <script>
     let player;
 
-    // 1️⃣ Load YouTube API
+    // Load YouTube Iframe API
     const tag = document.createElement('script');
     tag.src = "https://www.youtube.com/iframe_api";
     document.body.appendChild(tag);
 
-    // 2️⃣ Create player when API ready
+    // When API ready
     function onYouTubeIframeAPIReady() {
       player = new YT.Player('player', {
-        videoId: '', // will be set by parent
+        width: '100%',
+        height: '100%',
+        videoId: '',
         playerVars: {
-          autoplay: 1,
-          controls: 0,
-          mute: 0,
-          modestbranding: 1,
+          autoplay: 0,
+          controls: 1,
           rel: 0,
+          modestbranding: 1,
           playsinline: 1,
+          enablejsapi: 1,
         },
         events: {
+          onReady: () => {
+            console.log("YT Player ready");
+          },
           onStateChange: onPlayerStateChange,
-        },
+        }
       });
     }
 
-    // 3️⃣ Handle video ended
     function onPlayerStateChange(e) {
       if (e.data === YT.PlayerState.ENDED) {
         window.parent.postMessage({ type: 'videoEnded' }, '*');
       }
     }
 
-    // 4️⃣ Receive commands from parent
+    // Handle messages from parent
     window.addEventListener('message', (e) => {
       const { type, videoId } = e.data || {};
       if (!player) return;
@@ -59,6 +73,10 @@
           break;
         case 'pause':
           player.pauseVideo();
+          break;
+        case 'fullscreen':
+          const iframe = player.getIframe();
+          if (iframe.requestFullscreen) iframe.requestFullscreen();
           break;
       }
     });
