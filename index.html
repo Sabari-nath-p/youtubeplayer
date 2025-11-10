@@ -3,66 +3,65 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Custom YouTube Player</title>
+  <title>YouTube Controlled Player</title>
   <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      background: black;
-    }
-    #player {
-      width: 100%;
-      height: 100%;
-    }
+    html,body {margin:0;padding:0;width:100%;height:100%;background:black;overflow:hidden;}
+    #player {width:100%;height:100%;}
   </style>
 </head>
 <body>
-
   <div id="player"></div>
 
   <script>
     let player;
 
-    // ✅ 1. Load YouTube IFrame API
+    // 1️⃣ Load YouTube API
     const tag = document.createElement('script');
     tag.src = "https://www.youtube.com/iframe_api";
     document.body.appendChild(tag);
 
-    // ✅ 2. When API is ready, create the player
+    // 2️⃣ Create player when API ready
     function onYouTubeIframeAPIReady() {
       player = new YT.Player('player', {
-        videoId: '9rg7efddG2U', // your video ID
+        videoId: '', // will be set by parent
         playerVars: {
           autoplay: 1,
           controls: 0,
-          loop: 1,
-          mute: 1,
+          mute: 0,
           modestbranding: 1,
           rel: 0,
           playsinline: 1,
         },
         events: {
-          'onReady': onPlayerReady,
-          'onStateChange': onPlayerStateChange,
-        }
+          onStateChange: onPlayerStateChange,
+        },
       });
     }
 
-    function onPlayerReady(event) {
-      event.target.playVideo();
-    }
-
-    // ✅ 3. Detect when video ends
-    function onPlayerStateChange(event) {
-      if (event.data === YT.PlayerState.ENDED) {
-        console.log("Video ended");
-        // Send message to parent (Tizen app)
-        window.parent.postMessage({ type: "videoEnded" }, "*");
+    // 3️⃣ Handle video ended
+    function onPlayerStateChange(e) {
+      if (e.data === YT.PlayerState.ENDED) {
+        window.parent.postMessage({ type: 'videoEnded' }, '*');
       }
     }
+
+    // 4️⃣ Receive commands from parent
+    window.addEventListener('message', (e) => {
+      const { type, videoId } = e.data || {};
+      if (!player) return;
+
+      switch (type) {
+        case 'loadVideo':
+          if (videoId) player.loadVideoById(videoId);
+          break;
+        case 'play':
+          player.playVideo();
+          break;
+        case 'pause':
+          player.pauseVideo();
+          break;
+      }
+    });
   </script>
 </body>
 </html>
