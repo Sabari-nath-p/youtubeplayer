@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
@@ -14,8 +14,8 @@
       overflow: hidden;
     }
     #player {
-      width: 100vw;
-      height: 100vh;
+      width: 100%;
+      height: 100%;
     }
   </style>
 </head>
@@ -25,58 +25,80 @@
   <script>
     let player;
 
-    // Load YouTube Iframe API
+    // Load YouTube IFrame API
     const tag = document.createElement('script');
     tag.src = "https://www.youtube.com/iframe_api";
     document.body.appendChild(tag);
 
-    // When API ready
+    // Create player when API is ready
     function onYouTubeIframeAPIReady() {
       player = new YT.Player('player', {
-        width: '100%',
-        height: '100%',
-        videoId: '',
+        videoId: '', // Will be set by parent
         playerVars: {
-          autoplay: 0,
-          controls: 1,
-          rel: 0,
+          autoplay: 1,
+          controls: 0,
+          mute: 1,                // ✅ Start muted to allow autoplay
           modestbranding: 1,
+          rel: 0,
           playsinline: 1,
           enablejsapi: 1,
+          origin: window.location.origin,
         },
         events: {
-          onReady: () => {
-            console.log("YT Player ready");
-          },
+          onReady: onPlayerReady,
           onStateChange: onPlayerStateChange,
-        }
+          onError: onPlayerError,
+        },
       });
     }
 
-    function onPlayerStateChange(e) {
-      if (e.data === YT.PlayerState.ENDED) {
+    // Autoplay when ready
+    function onPlayerReady(event) {
+      event.target.mute();
+      event.target.playVideo();
+    }
+
+    // Handle playback state changes
+    function onPlayerStateChange(event) {
+      // ✅ Auto unmute once video actually starts playing
+      if (event.data === YT.PlayerState.PLAYING) {
+        setTimeout(() => {
+          if (player && player.isMuted()) {
+            player.unMute();
+          }
+        }, 1000); // wait 1 sec to ensure video is stable before unmuting
+      }
+
+      // ✅ Notify parent when video ends
+      if (event.data === YT.PlayerState.ENDED) {
         window.parent.postMessage({ type: 'videoEnded' }, '*');
       }
     }
 
-    // Handle messages from parent
+    // Handle playback errors
+    function onPlayerError(event) {
+      console.error("YouTube Player Error:", event.data);
+      window.parent.postMessage({ type: 'videoError', error: event.data }, '*');
+    }
+
+    // Receive commands from parent window
     window.addEventListener('message', (e) => {
       const { type, videoId } = e.data || {};
       if (!player) return;
 
       switch (type) {
         case 'loadVideo':
-          if (videoId) player.loadVideoById(videoId);
+          if (videoId) {
+            player.loadVideoById(videoId);
+            player.mute();      // ensure autoplay works
+            player.playVideo();
+          }
           break;
         case 'play':
           player.playVideo();
           break;
         case 'pause':
           player.pauseVideo();
-          break;
-        case 'fullscreen':
-          const iframe = player.getIframe();
-          if (iframe.requestFullscreen) iframe.requestFullscreen();
           break;
       }
     });
