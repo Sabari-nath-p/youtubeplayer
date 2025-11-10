@@ -25,20 +25,20 @@
   <script>
     let player;
     let apiReady = false;
+    let hasUnmuted = false;
 
     // Load YouTube IFrame API
     const tag = document.createElement('script');
     tag.src = "https://www.youtube.com/iframe_api";
     document.body.appendChild(tag);
 
-    // Called automatically by the API
     function onYouTubeIframeAPIReady() {
       apiReady = true;
       player = new YT.Player('player', {
         playerVars: {
           autoplay: 1,
           controls: 0,
-          mute: 1, // ✅ must start muted
+          mute: 1, // ✅ Start muted for autoplay
           modestbranding: 1,
           rel: 0,
           playsinline: 1,
@@ -53,18 +53,29 @@
       });
     }
 
-    function onPlayerReady(e) {
-      // ready but video not loaded yet
+    function onPlayerReady() {
+      player.mute();
+      player.playVideo();
     }
 
     function onPlayerStateChange(e) {
-      // ✅ unmute after playback actually starts
-      if (e.data === YT.PlayerState.PLAYING) {
+      // ✅ Detect playback start
+      if (e.data === YT.PlayerState.PLAYING && !hasUnmuted) {
+        hasUnmuted = true;
+        // Wait 3 seconds before unmuting to avoid autoplay block
         setTimeout(() => {
-          if (player && player.isMuted()) player.unMute();
-        }, 1000);
+          if (player && player.isMuted()) {
+            try {
+              player.unMute();
+              console.log("🔊 Auto-unmuted safely after playback stabilized.");
+            } catch (err) {
+              console.warn("Unmute failed:", err);
+            }
+          }
+        }, 3000);
       }
 
+      // ✅ Notify parent on video end
       if (e.data === YT.PlayerState.ENDED) {
         window.parent.postMessage({ type: 'videoEnded' }, '*');
       }
@@ -75,7 +86,7 @@
       window.parent.postMessage({ type: 'videoError', error: e.data }, '*');
     }
 
-    // ✅ Wait for messages from parent
+    // ✅ Listen for parent control messages
     window.addEventListener('message', (e) => {
       const { type, videoId } = e.data || {};
       if (!apiReady || !player) return;
@@ -83,7 +94,8 @@
       switch (type) {
         case 'loadVideo':
           if (videoId) {
-            player.mute(); // allow autoplay
+            hasUnmuted = false;
+            player.mute();
             player.loadVideoById(videoId);
             player.playVideo();
           }
