@@ -17,15 +17,57 @@
       width: 100%;
       height: 100%;
     }
+    #unmute-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      cursor: pointer;
+    }
+    #unmute-overlay.show {
+      display: flex;
+    }
+    #unmute-btn {
+      background: #ff0000;
+      color: white;
+      border: none;
+      padding: 20px 40px;
+      font-size: 18px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: background 0.3s;
+    }
+    #unmute-btn:hover {
+      background: #cc0000;
+    }
   </style>
 </head>
 <body>
   <div id="player"></div>
+  <div id="unmute-overlay">
+    <button id="unmute-btn">
+      <span>🔊</span>
+      <span>Click to Unmute</span>
+    </button>
+  </div>
 
   <script>
     let player;
     let apiReady = false;
     let hasUnmuted = false;
+    let unmuteAttempted = false;
+    
+    const overlay = document.getElementById('unmute-overlay');
+    const unmuteBtn = document.getElementById('unmute-btn');
 
     // Load YouTube IFrame API
     const tag = document.createElement('script');
@@ -38,7 +80,7 @@
         playerVars: {
           autoplay: 1,
           controls: 0,
-          mute: 1, // ✅ Start muted for autoplay
+          mute: 1,
           modestbranding: 1,
           rel: 0,
           playsinline: 1,
@@ -54,28 +96,74 @@
     }
 
     function onPlayerReady() {
+      // Ensure muted for autoplay
       player.mute();
       player.playVideo();
     }
 
-    function onPlayerStateChange(e) {
-      // ✅ Detect playback start
-      if (e.data === YT.PlayerState.PLAYING && !hasUnmuted) {
-        hasUnmuted = true;
-        // Wait 3 seconds before unmuting to avoid autoplay block
-        setTimeout(() => {
-          if (player && player.isMuted()) {
-            try {
-              player.unMute();
-              console.log("🔊 Auto-unmuted safely after playback stabilized.");
-            } catch (err) {
-              console.warn("Unmute failed:", err);
-            }
+    function tryAutoUnmute() {
+      if (hasUnmuted || unmuteAttempted) return;
+      unmuteAttempted = true;
+
+      // Try to unmute automatically
+      setTimeout(() => {
+        if (player && player.isMuted && player.isMuted()) {
+          try {
+            player.unMute();
+            player.setVolume(100);
+            
+            // Check if unmute worked
+            setTimeout(() => {
+              if (player.isMuted && player.isMuted()) {
+                // Unmute failed - show overlay for user interaction
+                overlay.classList.add('show');
+              } else {
+                hasUnmuted = true;
+                console.log("🔊 Auto-unmuted successfully");
+              }
+            }, 100);
+          } catch (err) {
+            console.warn("Auto-unmute failed, showing button:", err);
+            overlay.classList.add('show');
           }
-        }, 3000);
+        }
+      }, 2000);
+    }
+
+    function manualUnmute() {
+      if (!player) return;
+      
+      try {
+        player.unMute();
+        player.setVolume(100);
+        hasUnmuted = true;
+        overlay.classList.remove('show');
+        console.log("🔊 Manually unmuted");
+        
+        // Ensure playback continues
+        if (player.getPlayerState() !== YT.PlayerState.PLAYING) {
+          player.playVideo();
+        }
+      } catch (err) {
+        console.error("Manual unmute failed:", err);
+      }
+    }
+
+    // Manual unmute button
+    unmuteBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      manualUnmute();
+    });
+
+    overlay.addEventListener('click', manualUnmute);
+
+    function onPlayerStateChange(e) {
+      // When video starts playing, try to unmute
+      if (e.data === YT.PlayerState.PLAYING && !hasUnmuted && !unmuteAttempted) {
+        tryAutoUnmute();
       }
 
-      // ✅ Notify parent on video end
+      // Notify parent on video end
       if (e.data === YT.PlayerState.ENDED) {
         window.parent.postMessage({ type: 'videoEnded' }, '*');
       }
@@ -86,7 +174,7 @@
       window.parent.postMessage({ type: 'videoError', error: e.data }, '*');
     }
 
-    // ✅ Listen for parent control messages
+    // Listen for parent control messages
     window.addEventListener('message', (e) => {
       const { type, videoId } = e.data || {};
       if (!apiReady || !player) return;
@@ -94,7 +182,11 @@
       switch (type) {
         case 'loadVideo':
           if (videoId) {
+            // Reset unmute state for new video
             hasUnmuted = false;
+            unmuteAttempted = false;
+            overlay.classList.remove('show');
+            
             player.mute();
             player.loadVideoById(videoId);
             player.playVideo();
@@ -105,6 +197,9 @@
           break;
         case 'pause':
           player.pauseVideo();
+          break;
+        case 'unmute':
+          manualUnmute();
           break;
       }
     });
