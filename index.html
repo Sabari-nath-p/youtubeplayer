@@ -62,9 +62,45 @@
       color: white;
       font-size: 18px;
       z-index: 999;
+      flex-direction: column;
+      gap: 20px;
     }
     #loading-screen.hidden {
       display: none;
+    }
+    #thumbnail-container {
+      position: relative;
+      max-width: 90%;
+      max-height: 70%;
+      display: none;
+    }
+    #thumbnail-container.show {
+      display: block;
+    }
+    #thumbnail-img {
+      width: 100%;
+      height: auto;
+      border-radius: 8px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    }
+    #loading-spinner {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 60px;
+      height: 60px;
+      border: 4px solid rgba(255, 255, 255, 0.3);
+      border-top-color: #ff0000;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      to { transform: translate(-50%, -50%) rotate(360deg); }
+    }
+    #loading-text {
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 16px;
     }
   </style>
 </head>
