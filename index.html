@@ -24,20 +24,21 @@
 
   <script>
     let player;
+    let apiReady = false;
 
     // Load YouTube IFrame API
     const tag = document.createElement('script');
     tag.src = "https://www.youtube.com/iframe_api";
     document.body.appendChild(tag);
 
-    // Create player when API is ready
+    // Called automatically by the API
     function onYouTubeIframeAPIReady() {
+      apiReady = true;
       player = new YT.Player('player', {
-        videoId: '', // Will be set by parent
         playerVars: {
           autoplay: 1,
           controls: 0,
-          mute: 1,                // ✅ Start muted to allow autoplay
+          mute: 1, // ✅ must start muted
           modestbranding: 1,
           rel: 0,
           playsinline: 1,
@@ -52,45 +53,38 @@
       });
     }
 
-    // Autoplay when ready
-    function onPlayerReady(event) {
-      event.target.mute();
-      event.target.playVideo();
+    function onPlayerReady(e) {
+      // ready but video not loaded yet
     }
 
-    // Handle playback state changes
-    function onPlayerStateChange(event) {
-      // ✅ Auto unmute once video actually starts playing
-      if (event.data === YT.PlayerState.PLAYING) {
+    function onPlayerStateChange(e) {
+      // ✅ unmute after playback actually starts
+      if (e.data === YT.PlayerState.PLAYING) {
         setTimeout(() => {
-          if (player && player.isMuted()) {
-            player.unMute();
-          }
-        }, 1000); // wait 1 sec to ensure video is stable before unmuting
+          if (player && player.isMuted()) player.unMute();
+        }, 1000);
       }
 
-      // ✅ Notify parent when video ends
-      if (event.data === YT.PlayerState.ENDED) {
+      if (e.data === YT.PlayerState.ENDED) {
         window.parent.postMessage({ type: 'videoEnded' }, '*');
       }
     }
 
-    // Handle playback errors
-    function onPlayerError(event) {
-      console.error("YouTube Player Error:", event.data);
-      window.parent.postMessage({ type: 'videoError', error: event.data }, '*');
+    function onPlayerError(e) {
+      console.error("YouTube Player Error:", e.data);
+      window.parent.postMessage({ type: 'videoError', error: e.data }, '*');
     }
 
-    // Receive commands from parent window
+    // ✅ Wait for messages from parent
     window.addEventListener('message', (e) => {
       const { type, videoId } = e.data || {};
-      if (!player) return;
+      if (!apiReady || !player) return;
 
       switch (type) {
         case 'loadVideo':
           if (videoId) {
+            player.mute(); // allow autoplay
             player.loadVideoById(videoId);
-            player.mute();      // ensure autoplay works
             player.playVideo();
           }
           break;
