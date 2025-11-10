@@ -49,9 +49,27 @@
     #unmute-btn:hover {
       background: #cc0000;
     }
+    #loading-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: black;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: white;
+      font-size: 18px;
+      z-index: 999;
+    }
+    #loading-screen.hidden {
+      display: none;
+    }
   </style>
 </head>
 <body>
+  <div id="loading-screen">Waiting for video...</div>
   <div id="player"></div>
   <div id="unmute-overlay">
     <button id="unmute-btn">
@@ -65,9 +83,11 @@
     let apiReady = false;
     let hasUnmuted = false;
     let unmuteAttempted = false;
+    let currentVideoId = null;
     
     const overlay = document.getElementById('unmute-overlay');
     const unmuteBtn = document.getElementById('unmute-btn');
+    const loadingScreen = document.getElementById('loading-screen');
 
     // Load YouTube IFrame API
     const tag = document.createElement('script');
@@ -77,8 +97,11 @@
     function onYouTubeIframeAPIReady() {
       apiReady = true;
       player = new YT.Player('player', {
+        height: '100%',
+        width: '100%',
+        videoId: '', // Start without video
         playerVars: {
-          autoplay: 1,
+          autoplay: 0, // Don't autoplay until we have a video
           controls: 0,
           mute: 1,
           modestbranding: 1,
@@ -96,9 +119,9 @@
     }
 
     function onPlayerReady() {
-      // Ensure muted for autoplay
-      player.mute();
-      player.playVideo();
+      console.log("Player ready, waiting for video...");
+      // Notify parent that player is ready
+      window.parent.postMessage({ type: 'playerReady' }, '*');
     }
 
     function tryAutoUnmute() {
@@ -107,14 +130,14 @@
 
       // Try to unmute automatically
       setTimeout(() => {
-        if (player && player.isMuted && player.isMuted()) {
+        if (player && typeof player.isMuted === 'function' && player.isMuted()) {
           try {
             player.unMute();
             player.setVolume(100);
             
             // Check if unmute worked
             setTimeout(() => {
-              if (player.isMuted && player.isMuted()) {
+              if (typeof player.isMuted === 'function' && player.isMuted()) {
                 // Unmute failed - show overlay for user interaction
                 overlay.classList.add('show');
               } else {
@@ -127,11 +150,11 @@
             overlay.classList.add('show');
           }
         }
-      }, 2000);
+      }, 1500);
     }
 
     function manualUnmute() {
-      if (!player) return;
+      if (!player || typeof player.unMute !== 'function') return;
       
       try {
         player.unMute();
@@ -141,7 +164,8 @@
         console.log("🔊 Manually unmuted");
         
         // Ensure playback continues
-        if (player.getPlayerState() !== YT.PlayerState.PLAYING) {
+        if (typeof player.getPlayerState === 'function' && 
+            player.getPlayerState() !== YT.PlayerState.PLAYING) {
           player.playVideo();
         }
       } catch (err) {
@@ -159,19 +183,47 @@
 
     function onPlayerStateChange(e) {
       // When video starts playing, try to unmute
-      if (e.data === YT.PlayerState.PLAYING && !hasUnmuted && !unmuteAttempted) {
-        tryAutoUnmute();
+      if (e.data === YT.PlayerState.PLAYING) {
+        loadingScreen.classList.add('hidden');
+        
+        if (!hasUnmuted && !unmuteAttempted) {
+          tryAutoUnmute();
+        }
       }
 
       // Notify parent on video end
       if (e.data === YT.PlayerState.ENDED) {
         window.parent.postMessage({ type: 'videoEnded' }, '*');
       }
+
+      // Handle buffering
+      if (e.data === YT.PlayerState.BUFFERING) {
+        console.log("Buffering...");
+      }
     }
 
     function onPlayerError(e) {
       console.error("YouTube Player Error:", e.data);
-      window.parent.postMessage({ type: 'videoError', error: e.data }, '*');
+      loadingScreen.classList.add('hidden');
+      
+      let errorMsg = "Video error occurred";
+      switch(e.data) {
+        case 2:
+          errorMsg = "Invalid video ID";
+          break;
+        case 5:
+          errorMsg = "HTML5 player error";
+          break;
+        case 100:
+          errorMsg = "Video not found or private";
+          break;
+        case 101:
+        case 150:
+          errorMsg = "Video cannot be embedded";
+          break;
+      }
+      
+      window.parent.postMessage({ type: 'videoError', error: e.data, message: errorMsg }, '*');
     }
 
     // Listen for parent control messages
@@ -181,26 +233,59 @@
 
       switch (type) {
         case 'loadVideo':
-          if (videoId) {
-            // Reset unmute state for new video
+          if (videoId && typeof player.loadVideoById === 'function') {
+            console.log("Loading video:", videoId);
+            currentVideoId = videoId;
+            
+            // Reset state for new video
             hasUnmuted = false;
             unmuteAttempted = false;
             overlay.classList.remove('show');
+            loadingScreen.classList.remove('hidden');
             
-            player.mute();
-            player.loadVideoById(videoId);
+            // Mute and load video
+            try {
+              player.mute();
+              player.loadVideoById({
+                videoId: videoId,
+                startSeconds: 0
+              });
+              // Play after a short delay to ensure it's loaded
+              setTimeout(() => {
+                if (typeof player.playVideo === 'function') {
+                  player.playVideo();
+                }
+              }, 500);
+            } catch (err) {
+              console.error("Error loading video:", err);
+              loadingScreen.classList.add('hidden');
+            }
+          }
+          break;
+          
+        case 'play':
+          if (typeof player.playVideo === 'function') {
             player.playVideo();
           }
           break;
-        case 'play':
-          player.playVideo();
-          break;
+          
         case 'pause':
-          player.pauseVideo();
+          if (typeof player.pauseVideo === 'function') {
+            player.pauseVideo();
+          }
           break;
+          
         case 'unmute':
           manualUnmute();
           break;
+      }
+    });
+
+    // Handle page visibility to prevent playback issues
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden && player && typeof player.pauseVideo === 'function') {
+        // Optionally pause when tab is hidden
+        // player.pauseVideo();
       }
     });
   </script>
