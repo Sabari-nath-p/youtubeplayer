@@ -72,16 +72,16 @@
       position: relative;
       max-width: 90%;
       max-height: 70%;
-      display: none;
-    }
-    #thumbnail-container.show {
-      display: block;
     }
     #thumbnail-img {
       width: 100%;
       height: auto;
       border-radius: 8px;
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+      display: none;
+    }
+    #thumbnail-img.show {
+      display: block;
     }
     #loading-spinner {
       position: absolute;
@@ -105,7 +105,13 @@
   </style>
 </head>
 <body>
-  <div id="loading-screen">Waiting for video...</div>
+  <div id="loading-screen">
+    <div id="thumbnail-container">
+      <img id="thumbnail-img" alt="Video thumbnail" />
+      <div id="loading-spinner"></div>
+    </div>
+    <div id="loading-text">Loading video...</div>
+  </div>
   <div id="player"></div>
   <div id="unmute-overlay">
     <button id="unmute-btn">
@@ -124,6 +130,7 @@
     const overlay = document.getElementById('unmute-overlay');
     const unmuteBtn = document.getElementById('unmute-btn');
     const loadingScreen = document.getElementById('loading-screen');
+    const thumbnailImg = document.getElementById('thumbnail-img');
 
     // Load YouTube IFrame API
     const tag = document.createElement('script');
@@ -221,6 +228,7 @@
       // When video starts playing, try to unmute
       if (e.data === YT.PlayerState.PLAYING) {
         loadingScreen.classList.add('hidden');
+        thumbnailImg.classList.remove('show');
         
         if (!hasUnmuted && !unmuteAttempted) {
           tryAutoUnmute();
@@ -241,6 +249,7 @@
     function onPlayerError(e) {
       console.error("YouTube Player Error:", e.data);
       loadingScreen.classList.add('hidden');
+      thumbnailImg.classList.remove('show');
       
       let errorMsg = "Video error occurred";
       switch(e.data) {
@@ -273,6 +282,10 @@
             console.log("Loading video:", videoId);
             currentVideoId = videoId;
             
+            // Show thumbnail
+            thumbnailImg.src = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+            thumbnailImg.classList.add('show');
+            
             // Reset state for new video
             hasUnmuted = false;
             unmuteAttempted = false;
@@ -295,6 +308,7 @@
             } catch (err) {
               console.error("Error loading video:", err);
               loadingScreen.classList.add('hidden');
+              thumbnailImg.classList.remove('show');
             }
           }
           break;
