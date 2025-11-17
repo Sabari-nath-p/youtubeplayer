@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Alerts</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+
+<body>
+
+  <!-- EXIT OVERLAY -->
+<div id="exitOverlay" class="exit-overlay">
+  <canvas id="bg"></canvas>
+  <div class="exit-box">
+    <h1 class="exit-title">Are you sure you want to exit?</h1>
+    <div class="exit-buttons">
+      <button id="exitNoBtn" class="exit-btn cancel">Cancel</button>
+      <button id="exitYesBtn" class="exit-btn exit">Exit</button>
+    </div>
+  </div>
+</div>
+
+  <script>
+    // === UNIVERSAL SHOW / HIDE FUNCTION ===
+    function showBox(id) {
+      document.getElementById(id)?.classList.add("show");
+    }
+
+    function hideBox(id) {
+      document.getElementById(id)?.classList.remove("show");
+    }
+
+    // === EXIT BUTTON HANDLERS ===
+    const exitNoBtn = document.getElementById("exitNoBtn");
+    const exitYesBtn = document.getElementById("exitYesBtn");
+
+    exitNoBtn.addEventListener("click", () => hideBox("exitOverlay"));
+    exitYesBtn.addEventListener("click", () => window.close());
+
+  </script>
+</body>
+</html>
