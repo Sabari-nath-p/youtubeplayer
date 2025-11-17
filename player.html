@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8" />
+  <title>WebOS Player</title>
+
+  <!--Link your external CSS file -->
+  <link rel="stylesheet" href="style.css">
+
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      overflow: hidden;
+      background-color: black;
+    }
+
+    #upperScrollText, #bottomScrollText {
+      box-sizing: border-box;
+    }
+  </style>
+</head>
+
+<iframe
+    id="ytFrame"
+    src="https://streamnow-dev.pixl.ai/"
+    width="100%"
+    height="100%"
+    style=" position: fixed;border:none;display: none;"
+    allow="autoplay; fullscreen; encrypted-media">
+  </iframe>
+ 
+ <script src="player.js"></script>
+<body>
+<!-- Virtual Cursor -->
+<div id="virtualCursor"></div>
+
+    <video
+  id="videoPlayer"
+  autoplay
+  style="
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 80%;
+    background-color: black;
+  "
+></video>
+
+<img
+  id="imageViewer"
+  style="
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 80%;
+    background-color: black;
+  "
+/>
+
+
+<!-- Upper Scroll Text -->
+<div id="upperScrollText" class="scroll-container upper-scroll">
+  <div id="upperScrollContent" class="scroll-content">
+    Breaking News: Top purple ticker with white text
+  </div>
+</div>
+
+<!-- Bottom Scroll Text -->
+<div id="bottomScrollText" class="bottom-scroll">
+  This text will be perfectly centered
+</div>
+
+</body>
+</html>
