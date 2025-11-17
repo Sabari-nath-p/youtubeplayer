@@ -1,0 +1,433 @@
+
+/* ================= SPLASH SCREEN ================= */
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+  font-family: "Inter", sans-serif;
+  background: #04081a;
+  color: #fff;
+}
+
+/* Canvas (if used) */
+#bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+}
+
+/* STREAM NOW — Slow Pop & Hold */
+.popup-title {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.4);
+  z-index: 3;
+
+  font-size: 8rem;
+  font-weight: 900;
+  color: #ffffff;
+  -webkit-text-stroke: 2.2px #fff;
+  opacity: 0;
+  animation: popAndHold 2.5s ease-out forwards;
+}
+
+/* Slow pop up → stop (no reverse) */
+@keyframes popAndHold {
+  0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.4); }
+  100% { opacity: 1; transform: translate(-50%, -50%) scale(1); } /* stops here */
+}
+
+
+/* =================  CLIENT LOGO SCREEN ================= */
+
+.client-page {
+  background: #ffffff !important;
+}
+
+.client-logo {
+  width: 40%;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* Powered by Pixl bottom-right */
+.powered {
+  position: absolute;
+  bottom: 30px;
+  right: 30px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  opacity: 0.9;
+  z-index: 3;
+}
+
+.powered img {
+  height: 80px;
+  object-fit: contain;
+}
+
+.powered-text {
+  font-size: 1.7rem;
+  color: #000000;
+  font-weight: 500;
+}
+
+
+
+/* =================== QR PAGE LAYOUT ================= */
+
+.qr-wrapper {
+  position: relative;
+  z-index: 3;
+  height: 100vh;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+ padding-left: 250px;
+padding-right: 20px;  
+
+}
+
+/* LEFT SIDE BRAND */
+.brand-left {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start; 
+}
+
+.brand-icon {
+  width: 300px;
+  display: block;
+  margin: 0;
+  padding: 0;
+}
+
+.brand-title {
+  font-size: 6rem;
+  font-weight: 900;
+  color: white;
+  line-height: 1;
+  margin-left: -8px;
+  margin: -20px 0 0 0;
+  padding: 0;
+  -webkit-text-stroke: 1.5px #ffffff;
+}
+
+/* RIGHT SIDE GLASS CARD */
+.qr-card {
+  width: 800px;
+  height: 1000px;
+  background: rgba(0,0,0,0.35);
+  backdrop-filter: blur(25px);
+  border-radius: 28px;
+  border: 1px solid rgba(255,255,255,0.15);
+  box-shadow: 0 0 30px rgba(0,0,0,0.45);
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+}
+
+#qrcode {
+  background: #ffffff;
+  padding: 14px;
+  border-radius: 12px;
+}
+
+.qr-text {
+  font-size: 1.45rem;
+  text-align: center;
+  padding-top: 15px;
+  color: #ffffff;
+  opacity: 0.85;
+  line-height: 1.4;
+}
+
+
+/* ================= ALERT MODAL ================= */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  backdrop-filter: blur(6px);
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity .25s ease-in-out;
+  z-index: 9999;
+}
+
+.modal-overlay.show {
+  visibility: visible;
+  opacity: 1;
+}
+
+.modal-box {
+  width: 60%;
+  background: rgba(255,255,255,0.15);
+  border-radius: 22px;
+  padding: 28px;
+  color: #fff;
+  text-align: center;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.4);
+}
+
+.modal-title {
+  font-size: 2.1rem;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.modal-msg {
+  font-size: 1.2rem;
+  margin-bottom: 22px;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: center;
+  gap: 18px;
+}
+
+.btn {
+  font-size: 1.2rem;
+  padding: 10px 26px;
+  border-radius: 14px;
+  border: 2px solid #fff;
+  background: transparent;
+  color: #fff;
+}
+
+.btn-primary {
+  background: #4c6fff;
+  border: none;
+}
+
+
+/* ===================== EXIT OVERLAY ===================== */
+
+.exit-overlay {
+  position: fixed;
+  inset: 0;
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 5;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  font-family: 'Poppins', sans-serif; 
+}
+
+.exit-overlay.show {
+  display: flex;
+  opacity: 1;
+}
+
+/* Blob animation canvas inside overlay */
+.exit-overlay #bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* Exit box - bigger & modern look */
+.exit-box {
+  position: relative;
+  z-index: 2;
+  background: rgba(20, 25, 50, 0.78);
+  padding: 70px 80px; 
+  border-radius: 26px; 
+  color: #fff;
+  backdrop-filter: blur(14px);
+  width: 65%;
+  max-width: 950px;
+  text-align: center;
+  box-shadow: 0 0 45px rgba(0, 0, 0, 0.6);
+}
+
+/* Title - not bold */
+.exit-title {
+  font-size: 36px;
+  font-weight: 400; 
+  color: #fff;
+  margin-bottom: 50px;
+  letter-spacing: 0.5px;
+}
+
+/* Buttons layout */
+.exit-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 80px;
+}
+
+/* Buttons */
+.exit-btn {
+  font-family: inherit;
+  font-size: 32px;
+  padding: 22px 90px;
+  border-radius: 14px;
+  border: 2px solid #fff;
+  color: white;
+  background: transparent;
+  transition: all 0.25s ease;
+  cursor: pointer;
+}
+
+.exit-btn.cancel {
+  border-color: #aaa;
+}
+
+.exit-btn.exit {
+  background: #3d5af1;
+  border-color: #3d5af1;
+}
+
+.exit-btn:hover {
+  transform: scale(1.05);
+}
+
+.exit-btn.focused {
+  outline: none;
+  border: 3px solid #fff;
+  border-radius: 14px;
+  box-shadow: 0 0 25px rgba(255, 255, 255, 0.8);
+  transform: scale(1.08);
+  background: rgba(255, 255, 255, 0.1); 
+}
+
+
+.exit-btn.cancel:focus {
+  background: rgba(255,255,255,0.1);
+}
+
+.exit-btn.exit:focus {
+  background: #5f78ff;
+}
+
+
+/* ===================== NO INTERNET ===================== */
+
+.network-fullscreen {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #04081a;
+  font-family: 'Poppins', sans-serif;
+  color: #fff;
+}
+
+/* Blob Background Animation */
+.network-fullscreen #bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* Foreground Content */
+.network-content-full {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  animation: fadeIn 1s ease-out forwards;
+}
+
+.wifi-icon-large {
+  width: 200px;
+  height: 200px;
+  margin-bottom: 30px;
+  filter: brightness(0) invert(1);
+  opacity: 0.95;
+}
+
+.network-title {
+  font-size: 36px;
+  font-weight: 500;
+  margin-bottom: 10px;
+}
+
+.network-subtitle {
+  font-size: 22px;
+  opacity: 0.85;
+}
+
+/* Smooth entry animation */
+@keyframes fadeIn {
+  0% { opacity: 0; transform: translateY(20px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+
+/* ===================== Marquee Scroll Text ===================== */
+.scroll-container {
+  position: fixed;
+  bottom: 10%;
+  left: 0;
+  width: 100%;
+  height: 10%;
+  background-color: indigo;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  font-size: 48px;
+}
+
+.scroll-content {
+  white-space: nowrap;
+  position: absolute;
+  will-change: transform;
+  animation: scroll-left 15s linear infinite;
+  animation-play-state: paused;
+}
+
+@keyframes scroll-left {
+  0% { transform: translateX(100%); }
+  100% { transform: translateX(-100%); }
+}
+
+.bottom-scroll {
+  font-family: inherit; 
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  height: 10vh; /* Fixed consistent height */
+  min-height: 80px; /* helps on smaller screens */
+  background-color: white;
+  color: black;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+
+  /* FIXED SIZE — no resize jump */
+  font-size: clamp(28px, 2.4vw, 54px);
+  line-height: 1.1;
+  transition: none !important;
+
+  transform: translateZ(0);
+  will-change: transform;
+  overflow: hidden;
+}
+
